@@ -4,28 +4,55 @@ import math
 import random
 import streamlit.components.v1 as components
 
+def get_default_district_votes():
+    # input votes from 2020
+    Grossbasel_Ost = {"votes":{"FDP":29_576, "LDP":59_533, "EVP":9_425, "SP":94_945, "CVP":22_171, "GB":47_428, "GLP":31_089, "SVP":36_131, "KL":1_406}, 
+                      "total_seats": 27}
+    Grossbasel_West = {"votes":{"FDP":38_797, "LDP":65_248, "EVP":16_652, "SP":181_483, "CVP":26_816, "GB":107_831, "GLP":41_200, "SVP":55_681}, 
+                       "total_seats": 34}
+    Kleinbasel = {"votes":{"FDP":16_667, "LDP":29_135, "EVP":4_651, "SP":87_910, "CVP":15_505, "GB":53_612, "GLP":17_155, "SVP":23_720, "FUK":3_726, "VA":5_354, "KL":2_662, "Andere":2_459}, 
+                  "total_seats": 27}
+    Riehen = {"votes":{"FDP":9_538, "LDP":11_410, "EVP":6_657, "SP":13_216, "CVP":6_478, "GB":4_805, "GLP":4_920, "SVP":11_133}, 
+              "total_seats": 11}
+    Bettingen = {"votes":{"BDV":179, "AB":262}, 
+                 "total_seats": 1}
 
-def calc_total_votes(votes):
+    districts = {
+    "Grossbasel_Ost": Grossbasel_Ost,
+    "Grossbasel_West": Grossbasel_West,
+    "Kleinbasel": Kleinbasel,
+    "Riehen": Riehen,
+    "Bettingen": Bettingen
+    }
+    return districts
+
+def fuse_seats(seats):
+    # sum up all seats
+    result = {}
+    for district in seats:
+        for party, count in district.items():
+            if party in result:
+                result[party] += count
+            else:
+                result[party] = count
+    return result
+
+def calculate_seats(votes, total_seats):
     total_votes = sum(votes.values())
-    return total_votes
+    required_votes_per_seat = math.ceil(total_votes / total_seats)
+    # first distribution of seats
+    seats = {party: votes[party] // required_votes_per_seat for party in votes.keys()}
 
-
-def calc_wahlbeteiligung(votes, wahlberechtigte, anzahl_sitze=4):
-    total_votes = calc_total_votes(votes)
-    if wahlberechtigte == 0:
-        return 1
-    wahlbeteiligung = ((total_votes / anzahl_sitze) / wahlberechtigte)
-    return wahlbeteiligung
-
-
-def calculate_percentages(votes):
-    total_votes = calc_total_votes(votes)
-    if total_votes == 0:
-        return {party: 0 for party in votes.keys()}
-    percentages = {party: (count / total_votes) *
-                   100 for party, count in votes.items()}
-    return percentages
-
+    remaining_seats = total_seats - sum(seats.values())
+    # distribution of remaining seats
+    quotients = {party: votes[party] / (seats[party] * 2 + 1) for party in votes.keys()}
+    
+    for _ in range(remaining_seats):
+        max_quotient = max(quotients.values())
+        max_party = random.choice([party for party, quotient in quotients.items() if abs(quotient - max_quotient) < 1e-6])
+        seats[max_party] += 1
+        quotients[max_party] = votes[max_party] / (seats[max_party] * 2 + 1)
+    return seats
 
 def plot_diagram(percentages):
     plt.figure(figsize=(8, 6))
@@ -38,77 +65,6 @@ def plot_diagram(percentages):
         plt.text(party, percentage,
                  f'{percentage:.2f}%', ha='center', va='bottom')
     st.pyplot(plt)
-
-
-def calc_sitze(votes, anz_sitze):
-    # erstzuteilung
-    anz_parteistimmen = calc_total_votes(votes)
-    verteilungszahl = math.ceil(anz_parteistimmen / (anz_sitze+1))
-    if (anz_parteistimmen % (anz_sitze+1) == 0):
-        verteilungszahl += 1
-    erstzuteilung = {party: math.floor(
-        count / verteilungszahl) for party, count in votes.items()}
-    rest = {party: (count % verteilungszahl) for party, count in votes.items()}
-
-    # print('erstzuteilung', erstzuteilung)
-    # print('rest', rest)
-
-    # restmandate
-    while (sum(erstzuteilung.values()) < anz_sitze):
-        quotient = {party: count /
-                    (erstzuteilung[party]+1) for party, count in votes.items()}
-        max_quotient = max(quotient.values())
-        max_quotient_parties = [key for key,
-                                value in quotient.items() if value == max_quotient]
-        # print('quotient', quotient)
-        if (len(max_quotient_parties) == 1):
-            erstzuteilung[max_quotient_parties[0]] += 1
-        else:
-            # verteilung nach rest erstzuteilung
-            max_rest = max(rest.values())
-            max_rest_parties = [key for key,
-                                value in rest.items() if value == max_rest]
-            if (len(max_rest_parties) == 1):
-                erstzuteilung[max_rest_parties[0]] += 1
-            else:
-                # zuteilung nach parteistimmen
-                max_parteistimmen = max(votes.values())
-                max_parteistimmen_parties = [
-                    key for key, value in votes.items() if value == max_parteistimmen]
-                if (len(max_parteistimmen_parties) == 1):
-                    erstzuteilung[max_parteistimmen_parties[0]] += 1
-                else:
-                   # theoretisch nach eizelstimmenzahl hier aber per los
-                    random_key = random.choice(list(erstzuteilung.keys()))
-                    erstzuteilung[random_key] += 1
-    return erstzuteilung
-
-
-def sitze_zuteilen(votes, sitze_insgesamt):
-    # Calclulate Verteilung Listenverbindungen
-    lv = {'rot-grün': votes['SP']+votes['Grüne'], 'bürgerlich': votes['GLP']+votes['FDP'] +
-          votes['LDP']+votes['Die Mitte']+votes['EVP'], 'SVP': votes['SVP'], 'Andere': votes['Andere']}
-    sitze = calc_sitze(lv, sitze_insgesamt)
-
-    # Calculate Verteilug in Listenverbindungen
-
-    sitze_rot_grün = calc_sitze(
-        {'SP': votes['SP'], 'Grüne': votes['Grüne']}, sitze['rot-grün'])
-    sitze_bürgerlich = calc_sitze({'GLP': votes['GLP'], 'FDP': votes['FDP'], 'LDP': votes['LDP'],
-                                  'Die Mitte': votes['Die Mitte'], 'EVP': votes['EVP']}, sitze['bürgerlich'])
-    print('sitze', sitze)
-    print('sitze_rot_grün', sitze_rot_grün)
-    print('sitze_bürgerlich', sitze_bürgerlich)
-    sitze_final = {'SP': sitze_rot_grün['SP'], 'Grüne': sitze_rot_grün['Grüne'], 'GLP': sitze_bürgerlich['GLP'], 'FDP': sitze_bürgerlich['FDP'],
-                   'LDP': sitze_bürgerlich['LDP'], 'Die Mitte': sitze_bürgerlich['Die Mitte'], 'EVP': sitze_bürgerlich['EVP'], 'SVP': sitze['SVP'], 'Andere': sitze['Andere']}
-    # Plot Sitzverteilung
-    # if (False):
-    if (sum(sitze_final.values()) != sitze_insgesamt):
-        st.warning('Sitzverteilung fehlgeschlagen:')
-
-    else:
-        plot_sitze(sitze_final)
-
 
 def plot_sitze(sitze):
     plt.figure(figsize=(8, 6))
@@ -127,49 +83,47 @@ def plot_sitze(sitze):
 
 def main():
     # title
-    st.set_page_config(page_title='Wahlen 2023 Basel')
+    st.set_page_config(page_title='Wahlen 2024 Basel')
 
     # Side title in the main field
-    st.title('Nationalratswahlen 2023 Simulation Sitzzuteilung Basel-Stadt')
-    st.write('##### Es wurde die Listenverbindung zwischen SP und Grünen und zwischen EVP, GLP, Mitte, FDP, LDP berücksichtigt. Unterlisten sind nicht einzeln aufgeführt und werden zu den jeweiligen Mutterparteistimmen gerechnet. Der Einfachheit halber wurden die restlichen vereinzelten Stimmen zusammengefasst, obwohl diese nicht über eine Listenverbindung verfügen. Die Standartwerte sind auf Basis der Wahlen 2019 gesetzt.')
+    st.title('Grossratswahlen 2024 Simulation Sitzzuteilung Basel-Stadt')
     st.write(
-        'Das folgende Tool simuliert die Sitzverteilung für die Nationalratswahlen 2023 in Basel gemäss Bundesgesetz über die politischen Rechte. Das tool wurde von [Hannes Hui](https://hanneshui.ch) entworfen und umgesetzt. Die Korrektheit der Simulation ist nicht garantiert. Bei Fehlern oder Verbesserungsvorschlägen freue ich mich über eure Rückmeldung. Zur Transparenz und vereinfachten Mitwirkung befindet sich der Source Code dieses Projektes frei zugänglich auf Github: [Repository](https://github.com/hanneshui/Wahlen2023)')
-    st.sidebar.title('Parteistimmen für Nationalratswahlen 2023 Basel')
+        'Das folgende Tool simuliert die Sitzverteilung für die Grossratswahlen 2024 in Basel gemäss Bundesgesetz über die politischen Rechte. Das tool wurde von [Hannes Hui](https://hanneshui.ch) entworfen und umgesetzt. Die Korrektheit der Simulation ist nicht garantiert. Bei Fehlern oder Verbesserungsvorschlägen freue ich mich über eure Rückmeldung. Zur Transparenz und vereinfachten Mitwirkung befindet sich der Source Code dieses Projektes frei zugänglich auf Github: [Repository](https://github.com/hanneshui/Wahlen2024)')
+    st.sidebar.title('Parteistimmen für Nationalratswahlen 2024 Basel')
 
-    # Input number of votes for each pair of parties in the sidebar standart value is result of 2019 elections
-    parties = {'SP': 87475, 'Grüne': 52949, 'GLP': 15267,
-               'FDP': 16194, 'LDP': 41077, 'Die Mitte': 13229, 'EVP': 5406,  'SVP': 33845, 'Andere': 2475}
-    votes = {}
+    districts = get_default_district_votes()
 
-    votes = {party: st.sidebar.number_input(
-        f'Stimmen für {party}:', min_value=0, value=v, step=500) for party, v in parties.items()}
-    wahlberechtigte = st.sidebar.number_input(
-        'Wahlberechtigte:', min_value=0, step=1000, value=114139)
-    sitze_insgesamt = st.sidebar.number_input(
-        'Anzahl Sitze', min_value=0, value=4, step=1)
+    # Dropdown for districts
+    selected_district = st.sidebar.selectbox('Wählen Sie einen Bezirk aus', list(districts.keys()))
 
-    if (sum(votes.values()) == 0):
-        st.warning('Bitte Stimmen eingeben')
-        return
+    # input fields for votes
+    for party, votes in districts[selected_district]["votes"].items():
+        districts[selected_district]["votes"][party] = st.sidebar.number_input(f'Stimmen für {party}', value=votes, step = 500)
 
     # if button then perform calculations
     if st.button('Berechnungen starten'):
+        for district in districts.values():
+            district["seats"] = calculate_seats(district["votes"], district["total_seats"])
 
-        # Calculate percentages
-        percentages = calculate_percentages(votes)
+        all_seats = fuse_seats([district["seats"] for district in districts.values()])
+        # display results
+        district = districts[selected_district]
+        # Erstellen Sie zwei Spalten
+        col1, col2 = st.columns(2)
 
-        # Display total votes and Wahlbeteiligung
+        # Zeigen Sie das erste Diagramm in der ersten Spalte an
+        with col1:
+            st.write(f'Sitzzuteilung für {selected_district}')
+            plot_sitze(district["seats"])
 
-        wahlbeteiligung = calc_wahlbeteiligung(
-            votes, wahlberechtigte, sitze_insgesamt)
-
-        st.write(f'##### Wahlbeteiligung: {wahlbeteiligung:.2%}')
-        st.write('(Gilt nur falls alle Stimmen abgegeben werden)')
-        # Display diagram with percentages
-        plot_diagram(percentages)
-
-        sitze_zuteilen(votes, sitze_insgesamt)
-
+        # Zeigen Sie das zweite Diagramm in der zweiten Spalte an
+        with col2:
+            st.write(f'Stimmenverteilung für {selected_district}')
+            plot_diagram({party: votes / sum(district["votes"].values()) * 100 for party, votes in district["votes"].items()})
+            
+        st.write(f'Sitzverteilung insgesamt:')
+        plot_sitze(all_seats)
+        
 
 if __name__ == '__main__':
     main()
