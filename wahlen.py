@@ -80,7 +80,6 @@ def plot_sitze(sitze):
 
     st.pyplot(plt)
 
-
 def main():
     # title
     st.set_page_config(page_title='Wahlen 2024 Basel')
