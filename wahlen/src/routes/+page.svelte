@@ -1,12 +1,51 @@
-<script>
-	import { getDistrictVotes } from './districtVotes.js';
-	import { calculateSeats } from './calculateSeats.js';
+<script lang="ts">
+	import { getDistrictVotes, getAllowedVoters } from './districtVotes.ts';
+	import { calculateSeats } from './calculateSeats.ts';
+	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
-	const districts = getDistrictVotes();
-	let selectedDistrict = Object.keys(districts)[0]; // Standardmäßig der erste Distrikt ausgewählt
-	let seatDistribution;
-	let maxSeats;
-    let seatDistributionTotal;
+	let districts: DistrictVotes = getDistrictVotes();
+	let selectedDistrict: string = Object.keys(districts)[0]; // Standardmäßig der erste Distrikt ausgewählt
+	let seatDistribution: { [district: string]: { [party: string]: number } };
+	let maxSeats: number;
+	let seatDistributionTotal: { [party: string]: number };
+	let sliderValue: string = 'on';
+	const allowedVoters: { [district: string]: number } = getAllowedVoters();
+
+	// Reaktive Anweisung, um die Summe der Stimmen für jeden Distrikt zu berechnen
+	$: votesSum = Object.entries(districts).reduce((acc, [district, data]) => {
+		acc[district] = Object.values(data.votes).reduce((sum, current) => sum + current, 0);
+		return acc;
+	}, {});
+
+		// Berechnung des neuen Dictionaries mit dem Verhältnis von votesSum zu allowedVoters
+	$: participationRatio = Object.keys(votesSum).reduce((acc, district) => {
+		const votes = votesSum[district];
+		const allowed = allowedVoters[district] || 0; // Vermeidung von Division durch Null
+		acc[district] = allowed > 0 ? votes / allowed : 0; // Verhältnis berechnen
+		return acc;
+	}, {});
+
+	let proportionalVotes: { [district: string]: { [party: string]: number } };
+
+	// Reaktive Anweisung zur Berechnung der proportionalen Stimmen
+    $: if (sliderValue === 'on') {
+        proportionalVotes = getProportionalVotes(districts, votesSum);
+    }
+
+	function getProportionalVotes(districts, votesSum) {
+		return Object.entries(districts).reduce((acc, [district, data]) => {
+            const districtTotalVotes = votesSum[district];
+            const partyVotes = data.votes;
+            const proportions = Object.keys(partyVotes).reduce((partyAcc, party) => {
+                const votes = partyVotes[party];
+                // Berechnung der Proportion der Stimmen zur Gesamtstimmenzahl des Distrikts
+                partyAcc[party] = districtTotalVotes > 0 ? votes / districtTotalVotes : 0;
+                return partyAcc;
+            }, {});
+            acc[district] = proportions;
+            return acc;
+        }, {});
+	}
 	// Funktion, um die Stimmen des ausgewählten Distrikts zu holen
 	function getVotes(district) {
 		return districts[district].votes;
@@ -20,7 +59,7 @@
 	// Funktion, um den ausgewählten Distrikt zurückzusetzen
 	function resetDistrictVotes() {
 		// Annahme: getDistrictVotes() gibt die ursprünglichen Werte zurück
-		const originalVotes = getDistrictVotes();
+		const originalVotes: DistrictVotes = getDistrictVotes();
 
 		// Iterieren über alle Distrikte und Zurücksetzen der Stimmen
 		Object.keys(districts).forEach((district) => {
@@ -75,30 +114,55 @@
 
 		<!-- Beispiel, um die Stimmen des ausgewählten Distrikts anzuzeigen -->
 		{#if selectedDistrict}
+			<Switch bind:value={sliderValue} label="Prozent Modus" fontSize={24} design="slider" />
 			<h3>Stimmen:</h3>
-			<button type="button" on:click={resetDistrictVotes}>Reset</button>
 			<ul>
 				{#each Object.entries(getVotes(selectedDistrict)) as [party, votes]}
 					<li>{party}</li>
-					<label>
-						<input
-							type="number"
-							bind:value={districts[selectedDistrict].votes[party]}
-							min="0"
-							max="1000000"
-							step="500"
-						/>
-						<input
-							type="range"
-							bind:value={districts[selectedDistrict].votes[party]}
-							min="0"
-							max="1000000"
-							step="500"
-						/>
-					</label>
+					{#if sliderValue === 'on'}
+						<label>
+							<input
+								type="range"
+								bind:value={districts[selectedDistrict].votes[party]}
+								min="0"
+								max="100"
+								step="1"
+							/>
+							<input
+								type="number"
+								bind:value={districts[selectedDistrict].votes[party]}
+								min="0"
+								max="100"
+								step="1"
+							/>
+						</label>
+					{:else}
+						<label>
+							<input
+								type="number"
+								bind:value={districts[selectedDistrict].votes[party]}
+								min="0"
+								max="1000000"
+								step="500"
+							/>
+							<input
+								type="range"
+								bind:value={districts[selectedDistrict].votes[party]}
+								min="0"
+								max="1000000"
+								step="500"
+							/>
+						</label>
+					{/if}
 				{/each}
 			</ul>
 		{/if}
+		<button type="button" on:click={resetDistrictVotes}>Reset</button>
+		<p>Summe der Stimmen: {votesSum[selectedDistrict]}</p>
+		<p>Wahlbeteiligung: {(participationRatio[selectedDistrict] * 100).toFixed(1)}%</p>
+		{#if Object.keys(proportionalVotes).length > 0}
+    <p>{proportionalVotes.Riehen.SP}</p>
+{/if}
 	</div>
 
 	<div class="right-side">

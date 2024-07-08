@@ -125,4 +125,6 @@ def main():
         
 
 if __name__ == '__main__':
+    #print sum votzers of all districts
+    print(sum(get_default_district_votes()["Grossbasel_Ost"]["votes"].values())/0.435, sum(get_default_district_votes()["Grossbasel_West"]["votes"].values())/0.435, sum(get_default_district_votes()["Kleinbasel"]["votes"].values())/0.435, sum(get_default_district_votes()["Riehen"]["votes"].values())/0.435, sum(get_default_district_votes()["Bettingen"]["votes"].values())/0.435)
     main()

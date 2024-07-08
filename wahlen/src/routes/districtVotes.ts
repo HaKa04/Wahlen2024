@@ -1,4 +1,31 @@
-// districtVotes.js
+interface VoteCounts {
+	FDP?: number;
+	LDP?: number;
+	EVP?: number;
+	SP?: number;
+	CVP?: number;
+	GB?: number;
+	GLP?: number;
+	SVP?: number;
+	KL?: number;
+	FUK?: number;
+	VA?: number;
+	Andere?: number;
+	BDV?: number;
+	AB?: number;
+  }
+  
+  interface DistrictVotes {
+	[key: string]: {
+	  votes: VoteCounts;
+	  total_seats: number;
+	};
+  }
+interface TotalVoters {
+	[key: string]: number;
+}
+
+// districtVotes.ts
 export const getDistrictVotes = () => {
 	return {
 		Grossbasel_Ost: {
@@ -64,3 +91,13 @@ export const getDistrictVotes = () => {
 		}
 	};
 };
+
+export const getAllowedVoters = () => {
+	return {
+		Grossbasel_Ost: 762538,
+		Grossbasel_West: 1226915,
+		Kleinbasel: 603577,
+		Riehen: 156688,
+		Bettingen: 1014
+		};
+}
