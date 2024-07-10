@@ -92,7 +92,7 @@ export const getDistrictVotes = () => {
 };
 
 export function getDefaultFixedParties() {
-	let fixedParties:{[district:string]:{[party:string]:boolean}} = {
+	let fixedParties: { [district: string]: { [party: string]: boolean } } = {
 		Grossbasel_Ost: {
 			FDP: false,
 			LDP: false,

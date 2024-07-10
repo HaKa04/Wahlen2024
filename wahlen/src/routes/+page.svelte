@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { getDistrictVotes, getDefaultFixedParties } from './districtVotes.ts';
 	import { calculateSeats } from './calculateSeats.ts';
-	import { getProportionalVotes, getParticipationRatio, getSumOfParties, getAllowedVoters} from './importantFunctions.ts';
+	import {
+		getProportionalVotes,
+		getParticipationRatio,
+		getSumOfParties,
+		getAllowedVoters
+	} from './importantFunctions.ts';
 	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
 
@@ -9,21 +14,21 @@
 		[party: string]: number;
 	}
 	interface DistrictVotes {
-	[key: string]: {
-		votes: VoteCounts;
-		total_seats: number;
-	};
+		[key: string]: {
+			votes: VoteCounts;
+			total_seats: number;
+		};
 	}
 
 	let districts: DistrictVotes = getDistrictVotes();
 	let selectedDistrict: string = Object.keys(districts)[0]; // Standardmäßig der erste Distrikt ausgewählt
-	let seatDistribution: {[district:string]:{[party:string]: number}};
-	let seatDistributionTotal: {[party:string]: number};
+	let seatDistribution: { [district: string]: { [party: string]: number } };
+	let seatDistributionTotal: { [party: string]: number };
 	let sliderValue: boolean = true;
-	let participationRatio: {[district:string]: number} = getParticipationRatio(districts);
+	let participationRatio: { [district: string]: number } = getParticipationRatio(districts);
 	let proportionalVotes: { [district: string]: { [party: string]: number } } =
 		getProportionalVotes(districts);
-	let fixedParties:{[district:string]:{[party:string]:boolean}} = getDefaultFixedParties();
+	let fixedParties: { [district: string]: { [party: string]: boolean } } = getDefaultFixedParties();
 
 	// Berechnung der Sitze
 	$: [seatDistribution, seatDistributionTotal] = calculateSeatsTotal(districts);
@@ -50,12 +55,11 @@
 		districts = getDistrictVotes();
 		proportionalVotes = getProportionalVotes(districts);
 		participationRatio = getParticipationRatio(districts);
-
 	}
 
 	// Funktion, um die Sitze zu berechnen
 	function calculateSeatsTotal(districts: DistrictVotes) {
-		let newSeatDistribution:{[district:string]:{[party:string]: number}} = {};
+		let newSeatDistribution: { [district: string]: { [party: string]: number } } = {};
 		for (const districtKey in districts) {
 			newSeatDistribution[districtKey] = calculateSeats(districts[districtKey]);
 		}
@@ -64,8 +68,8 @@
 		return [newSeatDistribution, newSeatDistributionTotal];
 	}
 
-	function fuseSeats(newSeatDistribution:{[district:string]:{[party:string]: number}}) {
-		let newSeatDistributionTotal:{[party:string]: number} = {};
+	function fuseSeats(newSeatDistribution: { [district: string]: { [party: string]: number } }) {
+		let newSeatDistributionTotal: { [party: string]: number } = {};
 		for (const districtKey in newSeatDistribution) {
 			for (const partyKey in newSeatDistribution[districtKey]) {
 				if (newSeatDistributionTotal[partyKey] === undefined) {
@@ -77,54 +81,70 @@
 		return newSeatDistributionTotal;
 	}
 
-	function updateAbsoluteVotes(proportionalVoteDistricts:{[party:string]:number}, selectedDistrict:string) {
+	function updateAbsoluteVotes(
+		proportionalVoteDistricts: { [party: string]: number },
+		selectedDistrict: string
+	) {
 		// Iterieren über das Objekt und Aktualisieren der Werte
-		Object.keys(districts[selectedDistrict].votes).forEach(key => {
-  			districts[selectedDistrict].votes[key] = Math.round(proportionalVoteDistricts[key] * participationRatio[selectedDistrict] * getAllowedVoters()[selectedDistrict]);
-});
+		Object.keys(districts[selectedDistrict].votes).forEach((key) => {
+			districts[selectedDistrict].votes[key] = Math.round(
+				proportionalVoteDistricts[key] *
+					participationRatio[selectedDistrict] *
+					getAllowedVoters()[selectedDistrict]
+			);
+		});
 	}
 
-	function handlePercentageChanges(proportionalVoteDistricts: {[party: string]: number}, party: string, fixedParties: {[party: string]: boolean}) {
-    // Hier können Sie Logik hinzufügen, um zu verarbeiten, was passiert, wenn sich ein Wert ändert
-    let sumFixedParties: number = 0;
-    Object.keys(proportionalVoteDistricts).forEach(tempParty => {
-        if (fixedParties[tempParty]) {
-            sumFixedParties += proportionalVoteDistricts[tempParty] ?? 0;
-        }
-    });
+	function handlePercentageChanges(
+		proportionalVoteDistricts: { [party: string]: number },
+		party: string,
+		fixedParties: { [party: string]: boolean }
+	) {
+		// Hier können Sie Logik hinzufügen, um zu verarbeiten, was passiert, wenn sich ein Wert ändert
+		let sumFixedParties: number = 0;
+		Object.keys(proportionalVoteDistricts).forEach((tempParty) => {
+			if (fixedParties[tempParty]) {
+				sumFixedParties += proportionalVoteDistricts[tempParty] ?? 0;
+			}
+		});
 
-    if (!fixedParties[party]) {
-        // Wert der Partei zur Summe hinzufügen
-        sumFixedParties += proportionalVoteDistricts[party] ?? 0;
-    }
+		if (!fixedParties[party]) {
+			// Wert der Partei zur Summe hinzufügen
+			sumFixedParties += proportionalVoteDistricts[party] ?? 0;
+		}
 
-    // Wenn die Summe größer als 1 ist, das was über 1 ist von proportionalVoteDistricts an der Stelle von party abziehen
-    if (sumFixedParties > 1) {
-        let excess = sumFixedParties - 1; // Berechnung des Überschusses
-        proportionalVoteDistricts[party] -= excess; // Überschuss von der Partei abziehen
-        sumFixedParties = 1; // Summe auf 1 setzen
-    }
+		// Wenn die Summe größer als 1 ist, das was über 1 ist von proportionalVoteDistricts an der Stelle von party abziehen
+		if (sumFixedParties > 1) {
+			let excess = sumFixedParties - 1; // Berechnung des Überschusses
+			proportionalVoteDistricts[party] -= excess; // Überschuss von der Partei abziehen
+			sumFixedParties = 1; // Summe auf 1 setzen
+		}
 
-    let leftOver: number = 1 - sumFixedParties;
-    let movableParties = Object.keys(proportionalVoteDistricts).filter(tempParty => !fixedParties[tempParty] && tempParty !== party);
-    let sumMovableParties: number = 0;
-    movableParties.forEach(tempParty => {
-        sumMovableParties += proportionalVoteDistricts[tempParty];
-    });
-    let factor: number = leftOver / sumMovableParties;
-    for (let i = 0; i < movableParties.length; i++) {
-        proportionalVoteDistricts[movableParties[i]] *= factor;
-    }
-    updateAbsoluteVotes(proportionalVoteDistricts, selectedDistrict);
-    return proportionalVoteDistricts;
-}
+		let leftOver: number = 1 - sumFixedParties;
+		let movableParties = Object.keys(proportionalVoteDistricts).filter(
+			(tempParty) => !fixedParties[tempParty] && tempParty !== party
+		);
+		let sumMovableParties: number = 0;
+		movableParties.forEach((tempParty) => {
+			sumMovableParties += proportionalVoteDistricts[tempParty];
+		});
+		let factor: number = leftOver / sumMovableParties;
+		for (let i = 0; i < movableParties.length; i++) {
+			proportionalVoteDistricts[movableParties[i]] *= factor;
+		}
+		updateAbsoluteVotes(proportionalVoteDistricts, selectedDistrict);
+		return proportionalVoteDistricts;
+	}
 
-function handleParticipationRatioChange(selectedDistrict){
-	Object.keys(districts[selectedDistrict].votes).forEach(key => {
-  			districts[selectedDistrict].votes[key] = Math.round(proportionalVotes[selectedDistrict][key] * participationRatio[selectedDistrict] * getAllowedVoters()[selectedDistrict]);
-});
-}
-
+	function handleParticipationRatioChange(selectedDistrict) {
+		Object.keys(districts[selectedDistrict].votes).forEach((key) => {
+			districts[selectedDistrict].votes[key] = Math.round(
+				proportionalVotes[selectedDistrict][key] *
+					participationRatio[selectedDistrict] *
+					getAllowedVoters()[selectedDistrict]
+			);
+		});
+	}
 </script>
 
 <h1>Grossratswahlen 2024 Simulation Sitzzuteilung Basel-Stadt</h1>
@@ -161,7 +181,12 @@ function handleParticipationRatioChange(selectedDistrict){
 							<input
 								type="range"
 								bind:value={proportionalVotes[selectedDistrict][party]}
-								on:input={() => handlePercentageChanges(proportionalVotes[selectedDistrict], party, fixedParties[selectedDistrict])}
+								on:input={() =>
+									handlePercentageChanges(
+										proportionalVotes[selectedDistrict],
+										party,
+										fixedParties[selectedDistrict]
+									)}
 								min="0"
 								max="1"
 								step="0.01"
@@ -169,9 +194,14 @@ function handleParticipationRatioChange(selectedDistrict){
 							<input
 								type="number"
 								bind:value={proportionalVotes[selectedDistrict][party]}
-								on:input={() => handlePercentageChanges(proportionalVotes[selectedDistrict], party, fixedParties[selectedDistrict])}
+								on:input={() =>
+									handlePercentageChanges(
+										proportionalVotes[selectedDistrict],
+										party,
+										fixedParties[selectedDistrict]
+									)}
 								min="0"
-								max=1
+								max="1"
 								step="0.01"
 							/>
 						</label>
