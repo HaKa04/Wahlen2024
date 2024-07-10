@@ -1,5 +1,7 @@
-// test.js
-import { calculateSeats } from './calculateSeats.ts';
+import { getProportionalVotes, getParticipationRatio } from './importantFunctions.ts';
 import { getDistrictVotes } from './districtVotes.ts';
-const result = calculateSeats(getDistrictVotes().Kleinbasel);
-console.log(result);
+
+let districts = getDistrictVotes();
+
+console.log(getProportionalVotes(districts));
+console.log(getParticipationRatio(districts));

@@ -1,36 +1,38 @@
 <script lang="ts">
-	import { getDistrictVotes, getAllowedVoters } from './districtVotes.ts';
+	import { getDistrictVotes } from './districtVotes.ts';
 	import { calculateSeats } from './calculateSeats.ts';
-	import { getProportionalVotes } from './importantFunctions.ts';
+	import { getProportionalVotes, getParticipationRatio } from './importantFunctions.ts';
 	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
+
+	interface VoteCounts {
+		[party: string]: number;
+	}
+	interface DistrictVotes {
+	[key: string]: {
+		votes: VoteCounts;
+		total_seats: number;
+	};
+	}
+
 	let districts: DistrictVotes = getDistrictVotes();
 	let selectedDistrict: string = Object.keys(districts)[0]; // Standardmäßig der erste Distrikt ausgewählt
-	let seatDistribution: { [district: string]: { [party: string]: number } };
-	let maxSeats: number;
-	let seatDistributionTotal: { [party: string]: number };
+	let seatDistribution: {[district:string]:{[party:string]: number}};
+	let seatDistributionTotal: {[party:string]: number};
 	let sliderValue: string = 'on';
-	const allowedVoters: { [district: string]: number } = getAllowedVoters();
+	let participationRatio: {[district:string]: number} = getParticipationRatio(districts);
+	let proportionalVotes: { [district: string]: { [party: string]: number } } =
+		getProportionalVotes(districts);
 
-	// Berechnung des neuen Dictionaries mit dem Verhältnis von votesSum zu allowedVoters
-	$: participationRatio = Object.keys(districts).reduce((acc, district) => {
-		const votes = Object.entries(districts).reduce((acc, [district, data]) => {
-		acc[district] = Object.values(data.votes).reduce((sum, current) => sum + current, 0);
-		return acc;
-	}, {})[district];
-		const allowed = allowedVoters[district] || 0; // Vermeidung von Division durch Null
-		acc[district] = allowed > 0 ? votes / allowed : 0; // Verhältnis berechnen
-		return acc;
-	}, {});
+	// Berechnung der Sitze
+	$: [seatDistribution, seatDistributionTotal] = calculateSeatsTotal(districts);
 
-	let proportionalVotes: { [district: string]: { [party: string]: number } } = getProportionalVotes(districts);
-
-	// Reaktive Anweisung zur Berechnung der proportionalen Stimmen
+	// Logik für den Slider, um zwischen Prozent- und Absolutmodus zu wechseln
 	$: if (sliderValue === 'off') {
+		participationRatio = getParticipationRatio(districts);
 		proportionalVotes = getProportionalVotes(districts);
 	}
 
-	
 	// Funktion, um die Stimmen des ausgewählten Distrikts zu holen
 	function getVotes(district) {
 		return districts[district].votes;
@@ -53,30 +55,27 @@
 	}
 
 	// Funktion, um die Sitze zu berechnen
-	function calculateSeatsOnPress() {
-		let newSeatDistribution = {};
+	function calculateSeatsTotal(districts: DistrictVotes) {
+		let newSeatDistribution:{[district:string]:{[party:string]: number}} = {};
 		for (const districtKey in districts) {
 			newSeatDistribution[districtKey] = calculateSeats(districts[districtKey]);
 		}
-		seatDistribution = newSeatDistribution;
+		let newSeatDistributionTotal = fuseSeats(newSeatDistribution);
 
-		seatDistributionTotal = fuseSeats(seatDistribution);
-
-		// Aktualisieren von maxSeats basierend auf dem neuen seatDistribution
-		maxSeats = Math.max(...Object.values(seatDistribution).flatMap(Object.values));
+		return [newSeatDistribution, newSeatDistributionTotal];
 	}
 
-	function fuseSeats(seatDistribution) {
-		let seatDistributionTotal = {};
-		for (const districtKey in seatDistribution) {
-			for (const partyKey in seatDistribution[districtKey]) {
-				if (seatDistributionTotal[partyKey] === undefined) {
-					seatDistributionTotal[partyKey] = 0;
+	function fuseSeats(newSeatDistribution:{[district:string]:{[party:string]: number}}) {
+		let newSeatDistributionTotal:{[party:string]: number} = {};
+		for (const districtKey in newSeatDistribution) {
+			for (const partyKey in newSeatDistribution[districtKey]) {
+				if (newSeatDistributionTotal[partyKey] === undefined) {
+					newSeatDistributionTotal[partyKey] = 0;
 				}
-				seatDistributionTotal[partyKey] += seatDistribution[districtKey][partyKey];
+				newSeatDistributionTotal[partyKey] += newSeatDistribution[districtKey][partyKey];
 			}
 		}
-		return seatDistributionTotal;
+		return newSeatDistributionTotal;
 	}
 </script>
 
@@ -108,14 +107,14 @@
 						<label>
 							<input
 								type="range"
-								bind:value={districts[selectedDistrict].votes[party]}
+								bind:value={proportionalVotes[selectedDistrict][party]}
 								min="0"
 								max="100"
 								step="1"
 							/>
 							<input
 								type="number"
-								bind:value={districts[selectedDistrict].votes[party]}
+								bind:value={proportionalVotes[selectedDistrict][party]}
 								min="0"
 								max="100"
 								step="1"
@@ -150,7 +149,6 @@
 	</div>
 
 	<div class="right-side">
-		<button type="button" on:click={calculateSeatsOnPress}>Sitze berechnen</button>
 		{#if seatDistribution}
 			<h3>Sitzzuteilung im Distrikt {selectedDistrict}:</h3>
 			<ul>

@@ -16,11 +16,10 @@ interface VoteCounts {
 }
 
 interface DistrictVotes {
-	[key: string]: {
-		votes: VoteCounts;
-		total_seats: number;
-	};
+	votes: VoteCounts;
+	total_seats: number;
 }
+
 interface TotalVoters {
 	[key: string]: number;
 }
@@ -89,15 +88,5 @@ export const getDistrictVotes = () => {
 			votes: { BDV: 179, AB: 262 },
 			total_seats: 1
 		}
-	};
-};
-
-export const getAllowedVoters = () => {
-	return {
-		Grossbasel_Ost: 762538,
-		Grossbasel_West: 1226915,
-		Kleinbasel: 603577,
-		Riehen: 156688,
-		Bettingen: 1014
 	};
 };
