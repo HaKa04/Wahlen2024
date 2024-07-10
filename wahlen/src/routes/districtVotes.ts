@@ -13,14 +13,14 @@ interface VoteCounts {
 	Andere?: number;
 	BDV?: number;
 	AB?: number;
-  }
-  
-  interface DistrictVotes {
+}
+
+interface DistrictVotes {
 	[key: string]: {
-	  votes: VoteCounts;
-	  total_seats: number;
+		votes: VoteCounts;
+		total_seats: number;
 	};
-  }
+}
 interface TotalVoters {
 	[key: string]: number;
 }
@@ -99,5 +99,5 @@ export const getAllowedVoters = () => {
 		Kleinbasel: 603577,
 		Riehen: 156688,
 		Bettingen: 1014
-		};
-}
+	};
+};

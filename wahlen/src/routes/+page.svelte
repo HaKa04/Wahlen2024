@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getDistrictVotes, getAllowedVoters } from './districtVotes.ts';
 	import { calculateSeats } from './calculateSeats.ts';
+	import { getProportionalVotes } from './importantFunctions.ts';
 	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
 	let districts: DistrictVotes = getDistrictVotes();
@@ -11,41 +12,25 @@
 	let sliderValue: string = 'on';
 	const allowedVoters: { [district: string]: number } = getAllowedVoters();
 
-	// Reaktive Anweisung, um die Summe der Stimmen für jeden Distrikt zu berechnen
-	$: votesSum = Object.entries(districts).reduce((acc, [district, data]) => {
+	// Berechnung des neuen Dictionaries mit dem Verhältnis von votesSum zu allowedVoters
+	$: participationRatio = Object.keys(districts).reduce((acc, district) => {
+		const votes = Object.entries(districts).reduce((acc, [district, data]) => {
 		acc[district] = Object.values(data.votes).reduce((sum, current) => sum + current, 0);
 		return acc;
-	}, {});
-
-		// Berechnung des neuen Dictionaries mit dem Verhältnis von votesSum zu allowedVoters
-	$: participationRatio = Object.keys(votesSum).reduce((acc, district) => {
-		const votes = votesSum[district];
+	}, {})[district];
 		const allowed = allowedVoters[district] || 0; // Vermeidung von Division durch Null
 		acc[district] = allowed > 0 ? votes / allowed : 0; // Verhältnis berechnen
 		return acc;
 	}, {});
 
-	let proportionalVotes: { [district: string]: { [party: string]: number } };
+	let proportionalVotes: { [district: string]: { [party: string]: number } } = getProportionalVotes(districts);
 
 	// Reaktive Anweisung zur Berechnung der proportionalen Stimmen
-    $: if (sliderValue === 'on') {
-        proportionalVotes = getProportionalVotes(districts, votesSum);
-    }
-
-	function getProportionalVotes(districts, votesSum) {
-		return Object.entries(districts).reduce((acc, [district, data]) => {
-            const districtTotalVotes = votesSum[district];
-            const partyVotes = data.votes;
-            const proportions = Object.keys(partyVotes).reduce((partyAcc, party) => {
-                const votes = partyVotes[party];
-                // Berechnung der Proportion der Stimmen zur Gesamtstimmenzahl des Distrikts
-                partyAcc[party] = districtTotalVotes > 0 ? votes / districtTotalVotes : 0;
-                return partyAcc;
-            }, {});
-            acc[district] = proportions;
-            return acc;
-        }, {});
+	$: if (sliderValue === 'off') {
+		proportionalVotes = getProportionalVotes(districts);
 	}
+
+	
 	// Funktion, um die Stimmen des ausgewählten Distrikts zu holen
 	function getVotes(district) {
 		return districts[district].votes;
@@ -158,11 +143,10 @@
 			</ul>
 		{/if}
 		<button type="button" on:click={resetDistrictVotes}>Reset</button>
-		<p>Summe der Stimmen: {votesSum[selectedDistrict]}</p>
 		<p>Wahlbeteiligung: {(participationRatio[selectedDistrict] * 100).toFixed(1)}%</p>
 		{#if Object.keys(proportionalVotes).length > 0}
-    <p>{proportionalVotes.Riehen.SP}</p>
-{/if}
+			<p>{proportionalVotes[selectedDistrict].FDP}</p>
+		{/if}
 	</div>
 
 	<div class="right-side">
