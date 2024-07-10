@@ -90,3 +90,58 @@ export const getDistrictVotes = () => {
 		}
 	};
 };
+
+export function getDefaultFixedParties() {
+	let fixedParties:{[district:string]:{[party:string]:boolean}} = {
+		Grossbasel_Ost: {
+			FDP: false,
+			LDP: false,
+			EVP: false,
+			SP: false,
+			CVP: false,
+			GB: false,
+			GLP: false,
+			SVP: false,
+			KL: false
+		},
+		Grossbasel_West: {
+			FDP: false,
+			LDP: false,
+			EVP: false,
+			SP: false,
+			CVP: false,
+			GB: false,
+			GLP: false,
+			SVP: false
+		},
+		Kleinbasel: {
+			FDP: false,
+			LDP: false,
+			EVP: false,
+			SP: false,
+			CVP: false,
+			GB: false,
+			GLP: false,
+			SVP: false,
+			FUK: false,
+			VA: false,
+			KL: false,
+			Andere: false
+		},
+		Riehen: {
+			FDP: false,
+			LDP: false,
+			EVP: false,
+			SP: false,
+			CVP: false,
+			GB: false,
+			GLP: false,
+			SVP: false
+		},
+		Bettingen: {
+			BDV: false,
+			AB: false
+		}
+	};
+	return fixedParties;
+}

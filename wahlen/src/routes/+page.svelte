@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getDistrictVotes } from './districtVotes.ts';
+	import { getDistrictVotes, getDefaultFixedParties } from './districtVotes.ts';
 	import { calculateSeats } from './calculateSeats.ts';
-	import { getProportionalVotes, getParticipationRatio } from './importantFunctions.ts';
+	import { getProportionalVotes, getParticipationRatio, getSumOfParties, getAllowedVoters} from './importantFunctions.ts';
 	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
 
@@ -19,16 +19,17 @@
 	let selectedDistrict: string = Object.keys(districts)[0]; // Standardmäßig der erste Distrikt ausgewählt
 	let seatDistribution: {[district:string]:{[party:string]: number}};
 	let seatDistributionTotal: {[party:string]: number};
-	let sliderValue: string = 'on';
+	let sliderValue: boolean = true;
 	let participationRatio: {[district:string]: number} = getParticipationRatio(districts);
 	let proportionalVotes: { [district: string]: { [party: string]: number } } =
 		getProportionalVotes(districts);
+	let fixedParties:{[district:string]:{[party:string]:boolean}} = getDefaultFixedParties();
 
 	// Berechnung der Sitze
 	$: [seatDistribution, seatDistributionTotal] = calculateSeatsTotal(districts);
 
 	// Logik für den Slider, um zwischen Prozent- und Absolutmodus zu wechseln
-	$: if (sliderValue === 'off') {
+	$: if (!sliderValue) {
 		participationRatio = getParticipationRatio(districts);
 		proportionalVotes = getProportionalVotes(districts);
 	}
@@ -46,12 +47,10 @@
 	// Funktion, um den ausgewählten Distrikt zurückzusetzen
 	function resetDistrictVotes() {
 		// Annahme: getDistrictVotes() gibt die ursprünglichen Werte zurück
-		const originalVotes: DistrictVotes = getDistrictVotes();
+		districts = getDistrictVotes();
+		proportionalVotes = getProportionalVotes(districts);
+		participationRatio = getParticipationRatio(districts);
 
-		// Iterieren über alle Distrikte und Zurücksetzen der Stimmen
-		Object.keys(districts).forEach((district) => {
-			districts[district].votes = originalVotes[district].votes;
-		});
 	}
 
 	// Funktion, um die Sitze zu berechnen
@@ -77,6 +76,55 @@
 		}
 		return newSeatDistributionTotal;
 	}
+
+	function updateAbsoluteVotes(proportionalVoteDistricts:{[party:string]:number}, selectedDistrict:string) {
+		// Iterieren über das Objekt und Aktualisieren der Werte
+		Object.keys(districts[selectedDistrict].votes).forEach(key => {
+  			districts[selectedDistrict].votes[key] = Math.round(proportionalVoteDistricts[key] * participationRatio[selectedDistrict] * getAllowedVoters()[selectedDistrict]);
+});
+	}
+
+	function handlePercentageChanges(proportionalVoteDistricts: {[party: string]: number}, party: string, fixedParties: {[party: string]: boolean}) {
+    // Hier können Sie Logik hinzufügen, um zu verarbeiten, was passiert, wenn sich ein Wert ändert
+    let sumFixedParties: number = 0;
+    Object.keys(proportionalVoteDistricts).forEach(tempParty => {
+        if (fixedParties[tempParty]) {
+            sumFixedParties += proportionalVoteDistricts[tempParty] ?? 0;
+        }
+    });
+
+    if (!fixedParties[party]) {
+        // Wert der Partei zur Summe hinzufügen
+        sumFixedParties += proportionalVoteDistricts[party] ?? 0;
+    }
+
+    // Wenn die Summe größer als 1 ist, das was über 1 ist von proportionalVoteDistricts an der Stelle von party abziehen
+    if (sumFixedParties > 1) {
+        let excess = sumFixedParties - 1; // Berechnung des Überschusses
+        proportionalVoteDistricts[party] -= excess; // Überschuss von der Partei abziehen
+        sumFixedParties = 1; // Summe auf 1 setzen
+    }
+
+    let leftOver: number = 1 - sumFixedParties;
+    let movableParties = Object.keys(proportionalVoteDistricts).filter(tempParty => !fixedParties[tempParty] && tempParty !== party);
+    let sumMovableParties: number = 0;
+    movableParties.forEach(tempParty => {
+        sumMovableParties += proportionalVoteDistricts[tempParty];
+    });
+    let factor: number = leftOver / sumMovableParties;
+    for (let i = 0; i < movableParties.length; i++) {
+        proportionalVoteDistricts[movableParties[i]] *= factor;
+    }
+    updateAbsoluteVotes(proportionalVoteDistricts, selectedDistrict);
+    return proportionalVoteDistricts;
+}
+
+function handleParticipationRatioChange(selectedDistrict){
+	Object.keys(districts[selectedDistrict].votes).forEach(key => {
+  			districts[selectedDistrict].votes[key] = Math.round(proportionalVotes[selectedDistrict][key] * participationRatio[selectedDistrict] * getAllowedVoters()[selectedDistrict]);
+});
+}
+
 </script>
 
 <h1>Grossratswahlen 2024 Simulation Sitzzuteilung Basel-Stadt</h1>
@@ -103,21 +151,28 @@
 			<ul>
 				{#each Object.entries(getVotes(selectedDistrict)) as [party, votes]}
 					<li>{party}</li>
-					{#if sliderValue === 'on'}
+					{#if sliderValue}
 						<label>
+							<input
+								type="checkbox"
+								name="befestigen"
+								bind:checked={fixedParties[selectedDistrict][party]}
+							/>
 							<input
 								type="range"
 								bind:value={proportionalVotes[selectedDistrict][party]}
+								on:input={() => handlePercentageChanges(proportionalVotes[selectedDistrict], party, fixedParties[selectedDistrict])}
 								min="0"
-								max="100"
-								step="1"
+								max="1"
+								step="0.01"
 							/>
 							<input
 								type="number"
 								bind:value={proportionalVotes[selectedDistrict][party]}
+								on:input={() => handlePercentageChanges(proportionalVotes[selectedDistrict], party, fixedParties[selectedDistrict])}
 								min="0"
-								max="100"
-								step="1"
+								max=1
+								step="0.01"
 							/>
 						</label>
 					{:else}
@@ -126,14 +181,14 @@
 								type="number"
 								bind:value={districts[selectedDistrict].votes[party]}
 								min="0"
-								max="1000000"
+								max="150000"
 								step="500"
 							/>
 							<input
 								type="range"
 								bind:value={districts[selectedDistrict].votes[party]}
 								min="0"
-								max="1000000"
+								max="150000"
 								step="500"
 							/>
 						</label>
@@ -142,9 +197,27 @@
 			</ul>
 		{/if}
 		<button type="button" on:click={resetDistrictVotes}>Reset</button>
-		<p>Wahlbeteiligung: {(participationRatio[selectedDistrict] * 100).toFixed(1)}%</p>
-		{#if Object.keys(proportionalVotes).length > 0}
-			<p>{proportionalVotes[selectedDistrict].FDP}</p>
+		{#if sliderValue}
+			<label>
+				<input
+					type="number"
+					bind:value={participationRatio[selectedDistrict]}
+					on:input={() => handleParticipationRatioChange(selectedDistrict)}
+					min="0"
+					max="1"
+					step="0.01"
+				/>
+				<input
+					type="range"
+					bind:value={participationRatio[selectedDistrict]}
+					on:input={() => handleParticipationRatioChange(selectedDistrict)}
+					min="0"
+					max="1"
+					step="0.01"
+				/>
+			</label>
+		{:else}
+			<p>Wahlbeteiligung: {(participationRatio[selectedDistrict] * 100).toFixed(1)}%</p>
 		{/if}
 	</div>
 

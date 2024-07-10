@@ -8,8 +8,8 @@
     export let label;
     export let design = 'inner label'
     export let options = [];
-		export let fontSize = 16;
-	  export let value = 'on';
+	export let fontSize = 16;
+	  export let value = true;
 
     let checked = true;
 
@@ -23,7 +23,7 @@
 
         checked = state === 'true' ? false : true
 
-        value = checked === true ? 'on' : 'off'
+        value = checked === true ? true : false
     }
 	
 	  const slugify = (str = "") =>

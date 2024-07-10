@@ -1,13 +1,24 @@
-const getAllowedVoters = () => {
-	return {
+import { re } from "mathjs";
+
+export function getAllowedVoters () {
+	let allowedVoters: {[district:string]:number} = {
 		Grossbasel_Ost: 762538,
 		Grossbasel_West: 1226915,
 		Kleinbasel: 603577,
 		Riehen: 156688,
 		Bettingen: 1014
 	};
+	return allowedVoters;
 };
-
+export function getSumOfParties(district:{[party:string]:number}, Parties:string[]) {
+	let sum = 0;
+	for (const [party, votes] of Object.entries(district)) {
+	  if (Parties.includes(party)) {
+		sum += votes;
+	  }
+	}
+	return sum;
+  }
 export function getProportionalVotes(districts) {
 	let votesSum = Object.entries(districts).reduce((acc, [district, data]) => {
 		acc[district] = Object.values(data.votes).reduce((sum, current) => sum + current, 0);
