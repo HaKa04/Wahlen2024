@@ -4,7 +4,7 @@ interface VoteCounts {
 	EVP?: number;
 	SP?: number;
 	CVP?: number;
-	
+
 	GLP?: number;
 	SVP?: number;
 	KL?: number;
@@ -48,7 +48,7 @@ export const getDistrictVotes = () => {
 				LDP: 65248,
 				EVP: 16652,
 				SP: 181483,
-				CVP: 26816,				
+				CVP: 26816,
 				GLP: 41200,
 				SVP: 55681,
 				GB: 107831
@@ -61,7 +61,7 @@ export const getDistrictVotes = () => {
 				LDP: 29135,
 				EVP: 4651,
 				SP: 87910,
-				CVP: 15505,				
+				CVP: 15505,
 				GLP: 17155,
 				SVP: 23720,
 				FUK: 3726,
@@ -99,12 +99,12 @@ export function getDefaultFixedParties() {
 			LDP: false,
 			EVP: false,
 			SP: false,
-			CVP: false,	
+			CVP: false,
 			GLP: false,
 			SVP: false,
 			KL: false,
 			GB: false,
-			GR: false,
+			GP: false,
 			BA: false
 		},
 		Grossbasel_West: {
@@ -116,7 +116,7 @@ export function getDefaultFixedParties() {
 			GLP: false,
 			SVP: false,
 			GB: false,
-			GR: false,
+			GP: false,
 			BA: false
 		},
 		Kleinbasel: {
@@ -132,7 +132,7 @@ export function getDefaultFixedParties() {
 			KL: false,
 			Andere: false,
 			GB: false,
-			GR: false,
+			GP: false,
 			BA: false
 		},
 		Riehen: {
@@ -144,7 +144,7 @@ export function getDefaultFixedParties() {
 			GLP: false,
 			SVP: false,
 			GB: false,
-			GR: false,
+			GP: false,
 			BA: false
 		},
 		Bettingen: {

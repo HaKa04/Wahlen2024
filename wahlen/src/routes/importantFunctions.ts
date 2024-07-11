@@ -131,57 +131,63 @@ export function changePercentageChanges(
 	return proportionalVoteDistricts;
 }
 
-export function changeGrueneBastaSplitDistricts(districts: DistrictVotes, RationGrueneToGrueneAndBasta: number): DistrictVotes {
-    Object.keys(districts).forEach(districtKey => {
-        const district = districts[districtKey];
-        Object.keys(district.votes).forEach(partyCode => {
-            if (partyCode === 'GB') {
-                const gbVotes = district.votes[partyCode];
-                // Berechnen der neuen Werte basierend auf der Ratio
-                const grVotes = Math.round(RationGrueneToGrueneAndBasta * gbVotes);
-                const baVotes = Math.round((1 - RationGrueneToGrueneAndBasta) * gbVotes);
-                // Löschen des "GB"-Eintrags
-                delete district.votes[partyCode];
-                // Hinzufügen der neuen Schlüssel-Wert-Paare
-                district.votes['GR'] = grVotes;
-                district.votes['BA'] = baVotes;
-            }
-        });
-    });
+export function changeGrueneBastaSplitDistricts(
+	districts: DistrictVotes,
+	RationGrueneToGrueneAndBasta: number
+): DistrictVotes {
+	Object.keys(districts).forEach((districtKey) => {
+		const district = districts[districtKey];
+		Object.keys(district.votes).forEach((partyCode) => {
+			if (partyCode === 'GB') {
+				const gbVotes = district.votes[partyCode];
+				// Berechnen der neuen Werte basierend auf der Ratio
+				const grVotes = Math.round(RationGrueneToGrueneAndBasta * gbVotes);
+				const baVotes = Math.round((1 - RationGrueneToGrueneAndBasta) * gbVotes);
+				// Löschen des "GB"-Eintrags
+				delete district.votes[partyCode];
+				// Hinzufügen der neuen Schlüssel-Wert-Paare
+				district.votes['GP'] = grVotes;
+				district.votes['BA'] = baVotes;
+			}
+		});
+	});
 	return districts;
 }
 
-export function changeGrueneBastaSplitProportion(proportionalVotes:{[district:string]:{[party:string]:number}}, RationGrueneToGrueneAndBasta:number):{[district:string]:{[party:string]:number}}{
-	Object.keys(proportionalVotes).forEach(districtKey => {
-        const proportionalVote = proportionalVotes[districtKey];
-        Object.keys(proportionalVote).forEach(partyCode => {
-            if (partyCode === 'GB') {
-                const gbVotes = proportionalVote[partyCode];
-                // Berechnen der neuen Werte basierend auf der Ratio
-                const grVotes = RationGrueneToGrueneAndBasta * gbVotes;
-                const baVotes = (1 - RationGrueneToGrueneAndBasta) * gbVotes;
-                // Löschen des "GB"-Eintrags
-                delete proportionalVote[partyCode];
-                // Hinzufügen der neuen Schlüssel-Wert-Paare
-                proportionalVote['GR'] = grVotes;
-                proportionalVote['BA'] = baVotes;
-            }
-        });
-    });
+export function changeGrueneBastaSplitProportion(
+	proportionalVotes: { [district: string]: { [party: string]: number } },
+	RationGrueneToGrueneAndBasta: number
+): { [district: string]: { [party: string]: number } } {
+	Object.keys(proportionalVotes).forEach((districtKey) => {
+		const proportionalVote = proportionalVotes[districtKey];
+		Object.keys(proportionalVote).forEach((partyCode) => {
+			if (partyCode === 'GB') {
+				const gbVotes = proportionalVote[partyCode];
+				// Berechnen der neuen Werte basierend auf der Ratio
+				const grVotes = RationGrueneToGrueneAndBasta * gbVotes;
+				const baVotes = (1 - RationGrueneToGrueneAndBasta) * gbVotes;
+				// Löschen des "GB"-Eintrags
+				delete proportionalVote[partyCode];
+				// Hinzufügen der neuen Schlüssel-Wert-Paare
+				proportionalVote['GP'] = grVotes;
+				proportionalVote['BA'] = baVotes;
+			}
+		});
+	});
 	return proportionalVotes;
 }
 
 export function changeGrueneBastaFuseDistricts(districts: DistrictVotes): DistrictVotes {
-	Object.keys(districts).forEach(districtKey => {
+	Object.keys(districts).forEach((districtKey) => {
 		const district = districts[districtKey];
-		Object.keys(district.votes).forEach(partyCode => {
-			if (partyCode === 'GR'){
-				const grVotes = district.votes['GR'] ?? 0;
+		Object.keys(district.votes).forEach((partyCode) => {
+			if (partyCode === 'GP') {
+				const grVotes = district.votes['GP'] ?? 0;
 				const baVotes = district.votes['BA'] ?? 0;
 				// Berechnen der neuen Werte basierend auf der Fusion
 				const gbVotes = grVotes + baVotes;
 				// Löschen der "GR" und "BA"-Einträge
-				delete district.votes['GR'];
+				delete district.votes['GP'];
 				delete district.votes['BA'];
 				// Hinzufügen des neuen "GB"-Eintrags
 				district.votes['GB'] = gbVotes;
@@ -191,17 +197,19 @@ export function changeGrueneBastaFuseDistricts(districts: DistrictVotes): Distri
 	return districts;
 }
 
-export function changeGrueneBastaFuseProportion(proportionalVotes: { [district: string]: { [party: string]: number } }): { [district: string]: { [party: string]: number } } {
-	Object.keys(proportionalVotes).forEach(districtKey => {
+export function changeGrueneBastaFuseProportion(proportionalVotes: {
+	[district: string]: { [party: string]: number };
+}): { [district: string]: { [party: string]: number } } {
+	Object.keys(proportionalVotes).forEach((districtKey) => {
 		const proportionalVote = proportionalVotes[districtKey];
-		Object.keys(proportionalVote).forEach(partyCode => {
-			if (partyCode === 'GR') {
-				const grVotes = proportionalVote['GR'] ?? 0;
+		Object.keys(proportionalVote).forEach((partyCode) => {
+			if (partyCode === 'GP') {
+				const grVotes = proportionalVote['GP'] ?? 0;
 				const baVotes = proportionalVote['BA'] ?? 0;
 				// Berechnen der neuen Werte basierend auf der Fusion
 				const gbVotes = grVotes + baVotes;
 				// Löschen der "GR" und "BA"-Einträge
-				delete proportionalVote['GR'];
+				delete proportionalVote['GP'];
 				delete proportionalVote['BA'];
 				// Hinzufügen des neuen "GB"-Eintrags
 				proportionalVote['GB'] = gbVotes;

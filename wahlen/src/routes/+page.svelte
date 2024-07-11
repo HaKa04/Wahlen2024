@@ -34,12 +34,11 @@
 	let proportionalVotes: { [district: string]: { [party: string]: number } } =
 		getProportionalVotes(districts);
 	let fixedParties: { [district: string]: { [party: string]: boolean } } = getDefaultFixedParties();
-	let RatioGrueneToGrueneAndBasta: number = 0.8;
+	let RatioGrueneToGrueneAndBasta: number = 0.5613;
 
 	// Berechnung der Sitze
 	$: seatDistribution = calculateSeatsDistricts(districts);
 	$: seatDistributionTotal = calculateSeatsTotal(seatDistribution);
-
 
 	// Funktion, um den ausgewählten Distrikt zurückzusetzen
 	function resetDistrictVotes() {
@@ -47,7 +46,7 @@
 		districts = getDistrictVotes();
 		proportionalVotes = getProportionalVotes(districts);
 		participationRatio = getParticipationRatio(districts);
-		RatioGrueneToGrueneAndBasta = 0.8;
+		RatioGrueneToGrueneAndBasta = 0.5613;
 		handleGrueneBastaSplit(switchValueGBBasta);
 	}
 
@@ -76,15 +75,14 @@
 		handleVoteChangeForGrueneBastaRatio();
 	}
 
-	function handleVoteChangeForGrueneBastaRatio(){
+	function handleVoteChangeForGrueneBastaRatio() {
 		if (switchValueGBBasta) {
 			let absoluteGruene: number;
 			let absoluteBasta: number;
 			if (!sliderValuePercentMode) {
 				absoluteGruene = districts[selectedDistrict].votes.GR;
 				absoluteBasta = districts[selectedDistrict].votes.BA;
-			}
-			else {
+			} else {
 				absoluteGruene = proportionalVotes[selectedDistrict].GR;
 				absoluteBasta = proportionalVotes[selectedDistrict].BA;
 			}
@@ -103,9 +101,11 @@
 	function handleGrueneBastaSplit(switchValueGBBasta: boolean) {
 		if (switchValueGBBasta) {
 			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBasta);
-			proportionalVotes = changeGrueneBastaSplitProportion(proportionalVotes, RatioGrueneToGrueneAndBasta);
-		}
-		else {
+			proportionalVotes = changeGrueneBastaSplitProportion(
+				proportionalVotes,
+				RatioGrueneToGrueneAndBasta
+			);
+		} else {
 			districts = changeGrueneBastaFuseDistricts(districts);
 			proportionalVotes = changeGrueneBastaFuseProportion(proportionalVotes);
 		}
@@ -115,10 +115,12 @@
 			districts = changeGrueneBastaFuseDistricts(districts);
 			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBasta);
 			proportionalVotes = changeGrueneBastaFuseProportion(proportionalVotes);
-			proportionalVotes = changeGrueneBastaSplitProportion(proportionalVotes, RatioGrueneToGrueneAndBasta);
+			proportionalVotes = changeGrueneBastaSplitProportion(
+				proportionalVotes,
+				RatioGrueneToGrueneAndBasta
+			);
 		}
 	}
-
 </script>
 
 <h1>Grossratswahlen 2024 Simulation Sitzzuteilung Basel-Stadt</h1>
@@ -137,7 +139,12 @@
 		</select>
 		<!-- Beispiel, um die Stimmen des ausgewählten Distrikts anzuzeigen -->
 		{#if selectedDistrict}
-			<Switch bind:value={sliderValuePercentMode} label="Prozent Modus" fontSize={24} design="slider" />
+			<Switch
+				bind:value={sliderValuePercentMode}
+				label="Prozent Modus"
+				fontSize={24}
+				design="slider"
+			/>
 			<label>
 				<input
 					type="checkbox"
@@ -202,7 +209,7 @@
 								name="befestigen"
 								bind:checked={fixedParties[selectedDistrict][party]}
 							/>
-								Befestigen
+							Befestigen
 						</label>
 					{:else}
 						<label>
