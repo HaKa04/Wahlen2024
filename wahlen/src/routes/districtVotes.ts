@@ -4,7 +4,7 @@ interface VoteCounts {
 	EVP?: number;
 	SP?: number;
 	CVP?: number;
-	GB?: number;
+	
 	GLP?: number;
 	SVP?: number;
 	KL?: number;
@@ -13,6 +13,7 @@ interface VoteCounts {
 	Andere?: number;
 	BDV?: number;
 	AB?: number;
+	GB?: number;
 }
 
 interface DistrictVotes {
@@ -34,10 +35,10 @@ export const getDistrictVotes = () => {
 				EVP: 9425,
 				SP: 94945,
 				CVP: 22171,
-				GB: 47428,
 				GLP: 31089,
 				SVP: 36131,
-				KL: 1406
+				KL: 1406,
+				GB: 47428
 			},
 			total_seats: 27
 		},
@@ -47,10 +48,10 @@ export const getDistrictVotes = () => {
 				LDP: 65248,
 				EVP: 16652,
 				SP: 181483,
-				CVP: 26816,
-				GB: 107831,
+				CVP: 26816,				
 				GLP: 41200,
-				SVP: 55681
+				SVP: 55681,
+				GB: 107831
 			},
 			total_seats: 34
 		},
@@ -60,14 +61,14 @@ export const getDistrictVotes = () => {
 				LDP: 29135,
 				EVP: 4651,
 				SP: 87910,
-				CVP: 15505,
-				GB: 53612,
+				CVP: 15505,				
 				GLP: 17155,
 				SVP: 23720,
 				FUK: 3726,
 				VA: 5354,
 				KL: 2662,
-				Andere: 2459
+				Andere: 2459,
+				GB: 53612
 			},
 			total_seats: 27
 		},
@@ -78,9 +79,9 @@ export const getDistrictVotes = () => {
 				EVP: 6657,
 				SP: 13216,
 				CVP: 6478,
-				GB: 4805,
 				GLP: 4920,
-				SVP: 11133
+				SVP: 11133,
+				GB: 4805
 			},
 			total_seats: 11
 		},
@@ -98,11 +99,13 @@ export function getDefaultFixedParties() {
 			LDP: false,
 			EVP: false,
 			SP: false,
-			CVP: false,
-			GB: false,
+			CVP: false,	
 			GLP: false,
 			SVP: false,
-			KL: false
+			KL: false,
+			GB: false,
+			GR: false,
+			BA: false
 		},
 		Grossbasel_West: {
 			FDP: false,
@@ -110,9 +113,11 @@ export function getDefaultFixedParties() {
 			EVP: false,
 			SP: false,
 			CVP: false,
-			GB: false,
 			GLP: false,
-			SVP: false
+			SVP: false,
+			GB: false,
+			GR: false,
+			BA: false
 		},
 		Kleinbasel: {
 			FDP: false,
@@ -120,13 +125,15 @@ export function getDefaultFixedParties() {
 			EVP: false,
 			SP: false,
 			CVP: false,
-			GB: false,
 			GLP: false,
 			SVP: false,
 			FUK: false,
 			VA: false,
 			KL: false,
-			Andere: false
+			Andere: false,
+			GB: false,
+			GR: false,
+			BA: false
 		},
 		Riehen: {
 			FDP: false,
@@ -134,9 +141,11 @@ export function getDefaultFixedParties() {
 			EVP: false,
 			SP: false,
 			CVP: false,
-			GB: false,
 			GLP: false,
-			SVP: false
+			SVP: false,
+			GB: false,
+			GR: false,
+			BA: false
 		},
 		Bettingen: {
 			BDV: false,

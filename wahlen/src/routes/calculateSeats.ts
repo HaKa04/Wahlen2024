@@ -1,5 +1,13 @@
 import * as Math from 'mathjs';
-
+interface VoteCounts {
+	[party: string]: number;
+}
+interface DistrictVotes {
+	[key: string]: {
+		votes: VoteCounts;
+		total_seats: number;
+	};
+}
 // Definieren eines Typs für das Eingabeobjekt
 interface District {
 	total_seats: number;
@@ -9,7 +17,7 @@ interface District {
 // Definieren eines Typs für das Ausgabeobjekt
 type SeatDistribution = { [party: string]: number };
 
-export function calculateSeats(district: District): SeatDistribution {
+function calculateSeats(district: District): SeatDistribution {
 	const totalSeats: number = district.total_seats;
 	const votes: { [party: string]: number } = district.votes;
 	const totalVotes: number = Object.values(votes).reduce((a, b) => a + b, 0);
@@ -39,4 +47,33 @@ export function calculateSeats(district: District): SeatDistribution {
 		remainingSeats -= 1;
 	}
 	return seats;
+}
+
+// Funktion, um die Sitze zu berechnen
+export function calculateSeatsTotal(newSeatDistribution: {
+	[district: string]: { [party: string]: number };
+}) {
+	let newSeatDistributionTotal: { [party: string]: number } = fuseSeats(newSeatDistribution);
+	return newSeatDistributionTotal;
+}
+
+export function calculateSeatsDistricts(districts: DistrictVotes) {
+	let newSeatDistribution: { [district: string]: { [party: string]: number } } = {};
+	for (const districtKey in districts) {
+		newSeatDistribution[districtKey] = calculateSeats(districts[districtKey]);
+	}
+	return newSeatDistribution;
+}
+
+function fuseSeats(newSeatDistribution: { [district: string]: { [party: string]: number } }) {
+	let newSeatDistributionTotal: { [party: string]: number } = {};
+	for (const districtKey in newSeatDistribution) {
+		for (const partyKey in newSeatDistribution[districtKey]) {
+			if (newSeatDistributionTotal[partyKey] === undefined) {
+				newSeatDistributionTotal[partyKey] = 0;
+			}
+			newSeatDistributionTotal[partyKey] += newSeatDistribution[districtKey][partyKey];
+		}
+	}
+	return newSeatDistributionTotal;
 }
