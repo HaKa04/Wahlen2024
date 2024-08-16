@@ -12,6 +12,9 @@
 		changeGrueneBastaFuseDistricts,
 		changeGrueneBastaFuseProportion
 	} from './importantFunctions.ts';
+	import {getVotesforExtraSeatsTotal,
+		getVotesforExtraSeatsTotalAllDistricts
+	} from './statistics.ts';
 	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
 	import { get } from 'svelte/store';
@@ -36,12 +39,14 @@
 	let proportionalVotes: { [district: string]: { [party: string]: number } } =
 		getProportionalVotes(districts);
 	let fixedParties: { [district: string]: { [party: string]: boolean } } = getDefaultFixedParties();
-	let RatioGrueneToGrueneAndBastaGlobal: number = 0.5613;
 	let RatioGrueneToGrueneAndBastaLocal: { [district: string]: number } = getDefaultGrueneToBastaRatiosLocal();
+	//let extraSeatsTotal: {[districts:string]:{ [party: string]: number }} = getVotesforExtraSeatsTotalAllDistricts(districts);
+	let extraSeatsTotal: {[districts:string]:{ [party: string]: boolean }} = getDefaultFixedParties();
 
 	// Berechnung der Sitze
 	$: seatDistribution = calculateSeatsDistricts(districts);
 	$: seatDistributionTotal = calculateSeatsTotal(seatDistribution);
+	//$: extraSeatsTotal[selectedDistrict] = getVotesforExtraSeatsTotal(districts[selectedDistrict]);
 
 	// Funktion, um den ausgewählten Distrikt zurückzusetzen
 	function resetDistrictVotes() {
@@ -49,7 +54,6 @@
 		districts = getDistrictVotes();
 		proportionalVotes = getProportionalVotes(districts);
 		participationRatio = getParticipationRatio(districts);
-		RatioGrueneToGrueneAndBastaGlobal = 0.5613;
 		RatioGrueneToGrueneAndBastaLocal = getDefaultGrueneToBastaRatiosLocal();
 		handleGrueneBastaSplit(switchValueGBBasta);
 	}
@@ -90,7 +94,7 @@
 				absoluteGruene = proportionalVotes[selectedDistrict].GP;
 				absoluteBasta = proportionalVotes[selectedDistrict].BA;
 			}
-			RatioGrueneToGrueneAndBastaGlobal = absoluteGruene / (absoluteGruene + absoluteBasta);
+			RatioGrueneToGrueneAndBastaLocal[selectedDistrict] = absoluteGruene / (absoluteGruene + absoluteBasta);
 		}
 	}
 
@@ -104,10 +108,10 @@
 
 	function handleGrueneBastaSplit(switchValueGBBasta: boolean) {
 		if (switchValueGBBasta) {
-			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBastaGlobal);
+			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBastaLocal);
 			proportionalVotes = changeGrueneBastaSplitProportion(
 				proportionalVotes,
-				RatioGrueneToGrueneAndBastaGlobal
+				RatioGrueneToGrueneAndBastaLocal
 			);
 		} else {
 			districts = changeGrueneBastaFuseDistricts(districts);
@@ -117,13 +121,19 @@
 	function handleGrueneToBastaRatioChange() {
 		if (switchValueGBBasta) {
 			districts = changeGrueneBastaFuseDistricts(districts);
-			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBastaGlobal);
+			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBastaLocal);
 			proportionalVotes = changeGrueneBastaFuseProportion(proportionalVotes);
 			proportionalVotes = changeGrueneBastaSplitProportion(
 				proportionalVotes,
-				RatioGrueneToGrueneAndBastaGlobal
+				RatioGrueneToGrueneAndBastaLocal
 			);
 		}
+	}
+	function handleGrüneToBastaRatioTransmitChange() {
+		Object.keys(RatioGrueneToGrueneAndBastaLocal).forEach((district) => {
+			RatioGrueneToGrueneAndBastaLocal[district] = RatioGrueneToGrueneAndBastaLocal[selectedDistrict];
+		});
+		handleGrueneToBastaRatioChange();
 	}
 </script>
 
@@ -160,28 +170,8 @@
 				/>
 				Grüne und Basta aufteilen
 			</label>
+			{#if selectedDistrict != 'Bettingen'}
 			{#if switchValueGBBasta}
-			<div>
-			<label>
-				<input
-					type="number"
-					bind:value={RatioGrueneToGrueneAndBastaGlobal}
-					on:input={() => handleGrueneToBastaRatioChange()}
-					min="0"
-					max="1"
-					step="0.01"
-				/>
-				<input
-					type="range"
-					bind:value={RatioGrueneToGrueneAndBastaGlobal}
-					on:input={() => handleGrueneToBastaRatioChange()}
-					min="0"
-					max="1"
-					step="0.01"
-				/>
-				Alle Wahlkreise
-			</label>
-			</div>
 			<div>
 			<label>
 				<input
@@ -203,6 +193,10 @@
 				Wahlkreis {selectedDistrict}
 			</label>
 			</div>
+			<button on:click={handleGrüneToBastaRatioTransmitChange}>
+			Verhältnis auf alle Wahlkreise übertragen
+			</button>
+			{/if}
 			{/if}
 			<h3>Stimmen:</h3>
 			<ul>
@@ -289,6 +283,8 @@
 		{:else}
 			<p>Wahlbeteiligung: {(participationRatio[selectedDistrict] * 100).toFixed(1)}%</p>
 		{/if}
+		<h3>Extra Sitze:</h3>
+		{extraSeatsTotal[selectedDistrict]['SP']}
 	</div>
 
 	<div class="right-side">

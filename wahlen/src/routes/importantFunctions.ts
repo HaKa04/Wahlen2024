@@ -143,7 +143,7 @@ export function changePercentageChanges(
 
 export function changeGrueneBastaSplitDistricts(
 	districts: DistrictVotes,
-	RationGrueneToGrueneAndBasta: number
+	RationGrueneToGrueneAndBasta: {[distrct: string]: number}
 ): DistrictVotes {
 	Object.keys(districts).forEach((districtKey) => {
 		const district = districts[districtKey];
@@ -151,8 +151,8 @@ export function changeGrueneBastaSplitDistricts(
 			if (partyCode === 'GB') {
 				const gbVotes = district.votes[partyCode];
 				// Berechnen der neuen Werte basierend auf der Ratio
-				const grVotes = Math.round(RationGrueneToGrueneAndBasta * gbVotes);
-				const baVotes = Math.round((1 - RationGrueneToGrueneAndBasta) * gbVotes);
+				const grVotes = Math.round(RationGrueneToGrueneAndBasta[districtKey] * gbVotes);
+				const baVotes = Math.round((1 - RationGrueneToGrueneAndBasta[districtKey]) * gbVotes);
 				// Löschen des "GB"-Eintrags
 				delete district.votes[partyCode];
 				// Hinzufügen der neuen Schlüssel-Wert-Paare
@@ -166,7 +166,7 @@ export function changeGrueneBastaSplitDistricts(
 
 export function changeGrueneBastaSplitProportion(
 	proportionalVotes: { [district: string]: { [party: string]: number } },
-	RationGrueneToGrueneAndBasta: number
+	RationGrueneToGrueneAndBasta: {[distrct: string]: number}
 ): { [district: string]: { [party: string]: number } } {
 	Object.keys(proportionalVotes).forEach((districtKey) => {
 		const proportionalVote = proportionalVotes[districtKey];
@@ -174,8 +174,8 @@ export function changeGrueneBastaSplitProportion(
 			if (partyCode === 'GB') {
 				const gbVotes = proportionalVote[partyCode];
 				// Berechnen der neuen Werte basierend auf der Ratio
-				const grVotes = RationGrueneToGrueneAndBasta * gbVotes;
-				const baVotes = (1 - RationGrueneToGrueneAndBasta) * gbVotes;
+				const grVotes = RationGrueneToGrueneAndBasta[districtKey] * gbVotes;
+				const baVotes = (1 - RationGrueneToGrueneAndBasta[districtKey]) * gbVotes;
 				// Löschen des "GB"-Eintrags
 				delete proportionalVote[partyCode];
 				// Hinzufügen der neuen Schlüssel-Wert-Paare

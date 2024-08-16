@@ -17,7 +17,7 @@ interface District {
 // Definieren eines Typs für das Ausgabeobjekt
 type SeatDistribution = { [party: string]: number };
 
-function calculateSeats(district: District): SeatDistribution {
+export function calculateSeats(district: District): SeatDistribution {
 	const totalSeats: number = district.total_seats;
 	const votes: { [party: string]: number } = district.votes;
 	const totalVotes: number = Object.values(votes).reduce((a, b) => a + b, 0);
