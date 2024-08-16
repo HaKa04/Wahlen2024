@@ -4,6 +4,7 @@
 	import {
 		getProportionalVotes,
 		getParticipationRatio,
+		getDefaultGrueneToBastaRatiosLocal,
 		changeParticipationRatioChange,
 		changePercentageChanges,
 		changeGrueneBastaSplitDistricts,
@@ -13,6 +14,7 @@
 	} from './importantFunctions.ts';
 	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
+	import { get } from 'svelte/store';
 
 	interface VoteCounts {
 		[party: string]: number;
@@ -34,7 +36,8 @@
 	let proportionalVotes: { [district: string]: { [party: string]: number } } =
 		getProportionalVotes(districts);
 	let fixedParties: { [district: string]: { [party: string]: boolean } } = getDefaultFixedParties();
-	let RatioGrueneToGrueneAndBasta: number = 0.5613;
+	let RatioGrueneToGrueneAndBastaGlobal: number = 0.5613;
+	let RatioGrueneToGrueneAndBastaLocal: { [district: string]: number } = getDefaultGrueneToBastaRatiosLocal();
 
 	// Berechnung der Sitze
 	$: seatDistribution = calculateSeatsDistricts(districts);
@@ -46,7 +49,8 @@
 		districts = getDistrictVotes();
 		proportionalVotes = getProportionalVotes(districts);
 		participationRatio = getParticipationRatio(districts);
-		RatioGrueneToGrueneAndBasta = 0.5613;
+		RatioGrueneToGrueneAndBastaGlobal = 0.5613;
+		RatioGrueneToGrueneAndBastaLocal = getDefaultGrueneToBastaRatiosLocal();
 		handleGrueneBastaSplit(switchValueGBBasta);
 	}
 
@@ -80,13 +84,13 @@
 			let absoluteGruene: number;
 			let absoluteBasta: number;
 			if (!sliderValuePercentMode) {
-				absoluteGruene = districts[selectedDistrict].votes.GR;
+				absoluteGruene = districts[selectedDistrict].votes.GP;
 				absoluteBasta = districts[selectedDistrict].votes.BA;
 			} else {
-				absoluteGruene = proportionalVotes[selectedDistrict].GR;
+				absoluteGruene = proportionalVotes[selectedDistrict].GP;
 				absoluteBasta = proportionalVotes[selectedDistrict].BA;
 			}
-			RatioGrueneToGrueneAndBasta = absoluteGruene / (absoluteGruene + absoluteBasta);
+			RatioGrueneToGrueneAndBastaGlobal = absoluteGruene / (absoluteGruene + absoluteBasta);
 		}
 	}
 
@@ -100,10 +104,10 @@
 
 	function handleGrueneBastaSplit(switchValueGBBasta: boolean) {
 		if (switchValueGBBasta) {
-			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBasta);
+			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBastaGlobal);
 			proportionalVotes = changeGrueneBastaSplitProportion(
 				proportionalVotes,
-				RatioGrueneToGrueneAndBasta
+				RatioGrueneToGrueneAndBastaGlobal
 			);
 		} else {
 			districts = changeGrueneBastaFuseDistricts(districts);
@@ -113,11 +117,11 @@
 	function handleGrueneToBastaRatioChange() {
 		if (switchValueGBBasta) {
 			districts = changeGrueneBastaFuseDistricts(districts);
-			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBasta);
+			districts = changeGrueneBastaSplitDistricts(districts, RatioGrueneToGrueneAndBastaGlobal);
 			proportionalVotes = changeGrueneBastaFuseProportion(proportionalVotes);
 			proportionalVotes = changeGrueneBastaSplitProportion(
 				proportionalVotes,
-				RatioGrueneToGrueneAndBasta
+				RatioGrueneToGrueneAndBastaGlobal
 			);
 		}
 	}
@@ -155,9 +159,13 @@
 					}}
 				/>
 				Grüne und Basta aufteilen
+			</label>
+			{#if switchValueGBBasta}
+			<div>
+			<label>
 				<input
 					type="number"
-					bind:value={RatioGrueneToGrueneAndBasta}
+					bind:value={RatioGrueneToGrueneAndBastaGlobal}
 					on:input={() => handleGrueneToBastaRatioChange()}
 					min="0"
 					max="1"
@@ -165,13 +173,37 @@
 				/>
 				<input
 					type="range"
-					bind:value={RatioGrueneToGrueneAndBasta}
+					bind:value={RatioGrueneToGrueneAndBastaGlobal}
 					on:input={() => handleGrueneToBastaRatioChange()}
 					min="0"
 					max="1"
 					step="0.01"
 				/>
+				Alle Wahlkreise
 			</label>
+			</div>
+			<div>
+			<label>
+				<input
+					type="number"
+					bind:value={RatioGrueneToGrueneAndBastaLocal[selectedDistrict]}
+					on:input={() => handleGrueneToBastaRatioChange()}
+					min="0"
+					max="1"
+					step="0.01"
+				/>
+				<input
+					type="range"
+					bind:value={RatioGrueneToGrueneAndBastaLocal[selectedDistrict]}
+					on:input={() => handleGrueneToBastaRatioChange()}
+					min="0"
+					max="1"
+					step="0.01"
+				/>
+				Wahlkreis {selectedDistrict}
+			</label>
+			</div>
+			{/if}
 			<h3>Stimmen:</h3>
 			<ul>
 				{#each Object.entries(districts[selectedDistrict].votes) as [party, votes]}
