@@ -13,7 +13,9 @@
 		changeGrueneBastaFuseProportion
 	} from './importantFunctions.ts';
 	import {getVotesforExtraSeatsTotal,
-		getVotesforExtraSeatsTotalAllDistricts
+		getVotesforExtraSeatsTotalAllDistricts,
+		getVotesforMinusSeatsTotalAllDistricts,
+		getVotesforMinusSeatsTotal
 	} from './statistics.ts';
 	import Switch from './Switch.svelte';
 	import * as Math from 'mathjs';
@@ -40,13 +42,15 @@
 		getProportionalVotes(districts);
 	let fixedParties: { [district: string]: { [party: string]: boolean } } = getDefaultFixedParties();
 	let RatioGrueneToGrueneAndBastaLocal: { [district: string]: number } = getDefaultGrueneToBastaRatiosLocal();
-	//let extraSeatsTotal: {[districts:string]:{ [party: string]: number }} = getVotesforExtraSeatsTotalAllDistricts(districts);
-	let extraSeatsTotal: {[districts:string]:{ [party: string]: boolean }} = getDefaultFixedParties();
+	let extraSeatsTotal: {[districts:string]:{ [party: string]: number }} = getVotesforExtraSeatsTotalAllDistricts(districts);
+	let minusSeatsTotal: {[districts:string]:{ [party: string]: number }} = getVotesforMinusSeatsTotalAllDistricts(districts);
+	//let extraSeatsTotal: {[districts:string]:{ [party: string]: number }} = {Grossbasel_Ost: {FDP: 0,LDP: 0,EVP: 0,SP: 0,CVP: 0,GLP: 0,SVP: 0,KL: 0,GB: 0,GP: 0,BA: 0},Grossbasel_West: {FDP: 0,LDP: 0,EVP: 0,SP: 0,CVP: 0,GLP: 0,SVP: 0,GB: 0,GP: 0,BA: 0},Kleinbasel: {FDP: 0,LDP: 0,EVP: 0,SP: 0,CVP: 0,GLP: 0,SVP: 0,FUK: 0,VA: 0,KL: 0,Andere: 0,GB: 0,GP: 0,BA: 0},Riehen: {FDP: 0,LDP: 0,EVP: 0,SP: 0,CVP: 0,GLP: 0,SVP: 0,GB: 0,GP: 0,BA: 0},Bettingen: {BDV: 0,AB: 0}};
 
 	// Berechnung der Sitze
 	$: seatDistribution = calculateSeatsDistricts(districts);
 	$: seatDistributionTotal = calculateSeatsTotal(seatDistribution);
-	//$: extraSeatsTotal[selectedDistrict] = getVotesforExtraSeatsTotal(districts[selectedDistrict]);
+	$: extraSeatsTotal[selectedDistrict] = getVotesforExtraSeatsTotal(districts[selectedDistrict]);
+	$: minusSeatsTotal[selectedDistrict] = getVotesforMinusSeatsTotal(districts[selectedDistrict]);
 
 	// Funktion, um den ausgewählten Distrikt zurückzusetzen
 	function resetDistrictVotes() {
@@ -255,6 +259,12 @@
 								max="150000"
 								step="500"
 							/>
+							<span style="color: green;">
+							{extraSeatsTotal[selectedDistrict][party]}
+							</span>
+							<span style="color: red;">
+							{minusSeatsTotal[selectedDistrict][party]}
+							</span>
 						</label>
 					{/if}
 				{/each}
@@ -283,8 +293,6 @@
 		{:else}
 			<p>Wahlbeteiligung: {(participationRatio[selectedDistrict] * 100).toFixed(1)}%</p>
 		{/if}
-		<h3>Extra Sitze:</h3>
-		{extraSeatsTotal[selectedDistrict]['SP']}
 	</div>
 
 	<div class="right-side">
