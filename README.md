@@ -1,5 +1,3 @@
-🗳️ **Grossratswahlen 2024 Simulation Sitzzuteilung Basel** 🇨🇭
-
 #### 📋 Project Overview 📋
 
 This tool simulates the seat allocation for the Grossratswahlen 2024 in Basel.
